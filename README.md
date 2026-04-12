@@ -22,7 +22,6 @@ A sleek, modern web dashboard for [Hermes AI Agent](https://github.com/hermes-ai
 - 📜 **Session Management** — Drag & drop reorder, token usage bars
 - 🎯 **Platform Icons** — Discord, Telegram, QQ, WeChat, API, Cron
 - 📊 **Token Usage** — Visual progress bars per session
-- 🖼️ **Image Support** — Inline images with click-to-preview
 - 📱 **Responsive Design** — Works on different screen sizes
 - ⚡ **Fast & Lightweight** — Built with Vite and FastAPI
 
