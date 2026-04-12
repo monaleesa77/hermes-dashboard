@@ -193,6 +193,71 @@ MIT License — see [LICENSE](./LICENSE) for details.
 - Inspired by [PinchChat](https://github.com/MarlBurroW/pinchchat) for OpenClaw
 - Built for [Hermes AI Agent](https://github.com/hermes-ai)
 
+## 📱 Mobile Access
+
+Access Hermes Dashboard from your mobile device:
+
+### Quick Setup
+
+1. **Ensure your phone and computer are on the same WiFi network**
+
+2. **Get your computer's IP address:**
+   ```bash
+   # macOS
+   ipconfig getifaddr en0
+   # or
+   ifconfig | grep "inet " | grep -v 127.0.0.1
+   ```
+
+3. **Access from your phone:**
+   ```
+   http://[YOUR_COMPUTER_IP]:10007
+   # Example: http://192.168.1.100:10007
+   ```
+
+### Install as PWA App
+
+**iOS (Safari):**
+1. Open the website in Safari
+2. Tap the Share button
+3. Select "Add to Home Screen"
+4. The app will appear on your home screen
+
+**Android (Chrome):**
+1. Open the website in Chrome
+2. Tap the menu (three dots)
+3. Select "Install App" or "Add to Home Screen"
+
+### HTTPS for Secure Access
+
+To enable HTTPS (recommended for mobile):
+
+```bash
+# 1. Generate SSL certificates
+cd backend
+./generate-ssl.sh
+
+# 2. Enable HTTPS in .env
+echo "USE_HTTPS=true" >> .env
+
+# 3. Restart the server
+# Access via https://[IP]:10007
+```
+
+### Mobile-Optimized Features
+
+- **Responsive Design**: Automatically adapts to mobile screen sizes
+- **Bottom Navigation Bar**: Quick access to sessions and new chat
+- **Touch-Friendly**: Buttons and controls optimized for touch input
+- **Swipe Gestures**: Swipe to open sidebar on mobile
+- **Offline Support**: PWA caching for better performance
+
+### Troubleshooting Mobile Access
+
+See [README_MOBILE.md](README_MOBILE.md) for detailed troubleshooting guide.
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Hermes Gateway not running

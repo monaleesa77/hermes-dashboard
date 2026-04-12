@@ -216,6 +216,40 @@ curl http://localhost:8643/api/health
 # 检查 vite.config.ts 代理设置
 ```
 
+## 📱 手机端访问
+
+从手机访问 Hermes Dashboard：
+
+### 快速设置
+
+1. **确保手机和电脑在同一 WiFi 网络**
+
+2. **获取电脑的 IP 地址：**
+   ```bash
+   # macOS
+   ipconfig getifaddr en0
+   ```
+
+3. **从手机访问：**
+   ```
+   http://[电脑IP]:10007
+   # 例如：http://192.168.1.100:10007
+   ```
+
+### 安装为 PWA 应用
+
+**iOS Safari：**
+1. 打开网页 → 点击分享按钮 → "添加到主屏幕"
+
+**Android Chrome：**
+1. 打开网页 → 菜单 → "安装应用"
+
+### 详细指南
+
+查看 [README_MOBILE.md](README_MOBILE.md) 获取完整的手机端使用指南。
+
+---
+
 ## 📸 截图
 
 ![主界面](./assets/01-main-dashboard.png)
