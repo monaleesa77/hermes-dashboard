@@ -25,7 +25,11 @@ class Settings(BaseSettings):
     hermes_api_url: str = "http://localhost:8642"
     hermes_api_key: str = "any"
     hermes_home: str = str(Path.home() / ".hermes")
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,https://localhost:3000"
+    # HTTPS Configuration
+    use_https: bool = False
+    ssl_key_file: str = "certs/key.pem"
+    ssl_cert_file: str = "certs/cert.pem"
 
     class Config:
         env_file = ".env"
@@ -251,9 +255,32 @@ async def websocket_chat(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+    from pathlib import Path
+
+    # HTTPS configuration
+    ssl_keyfile = None
+    ssl_certfile = None
+
+    if settings.use_https:
+        cert_dir = Path(__file__).parent / "certs"
+        key_file = cert_dir / "key.pem"
+        cert_file = cert_dir / "cert.pem"
+
+        if key_file.exists() and cert_file.exists():
+            ssl_keyfile = str(key_file)
+            ssl_certfile = str(cert_file)
+            print(f"🔒 HTTPS enabled")
+            print(f"   Key: {ssl_keyfile}")
+            print(f"   Cert: {ssl_certfile}")
+        else:
+            print("⚠️  HTTPS enabled but certificates not found. Run ./generate-ssl.sh first")
+            print("   Falling back to HTTP")
+
     uvicorn.run(
         "main:app",
         host=settings.bridge_host,
         port=settings.bridge_port,
         reload=True,
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile,
     )
