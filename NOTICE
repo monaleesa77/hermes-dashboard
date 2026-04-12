@@ -1,0 +1,22 @@
+Hermes Dashboard
+Copyright (c) 2026 Hermes Dashboard Contributors
+
+This project is inspired by PinchChat (https://github.com/MarlBurroW/pinchchat)
+created by MarlBurroW for OpenClaw.
+
+The UI/UX design, layout concepts, and visual styling are heavily inspired by
+PinchChat, while the implementation is original and built specifically for
+the Hermes AI Agent ecosystem.
+
+PinchChat is an excellent open-source chat interface for OpenClaw, and this
+project aims to bring similar design principles to the Hermes community.
+
+Original PinchChat Repository:
+https://github.com/MarlBurroW/pinchchat
+
+Attribution is retained in the README.md and this NOTICE file.
+
+---
+
+This project is licensed under the MIT License.
+See LICENSE file for details.
