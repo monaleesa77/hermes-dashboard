@@ -256,20 +256,35 @@ async def websocket_chat(websocket: WebSocket):
             if not content and request.images:
                 content = "Analyze this image"
 
-            # Add image references to content if present
-            if request.images:
-                image_descriptions = []
-                for i, img in enumerate(request.images, 1):
-                    if img.startswith('data:'):
-                        # Extract mime type
-                        mime = img.split(';')[0].split(':')[1]
-                        image_descriptions.append(f"[Image {i}: {mime}]")
-                    else:
-                        image_descriptions.append(f"[Image {i}]")
-                if image_descriptions:
-                    content = f"{content}\n\n{' '.join(image_descriptions)}"
+            # Build messages array for vision-capable models
+            # Format: content as array with text and image_url blocks
+            message_content = []
 
-            messages = [{"role": "user", "content": content}]
+            # Add text content
+            if content:
+                message_content.append({"type": "text", "text": content})
+
+            # Add image content
+            if request.images:
+                for img in request.images:
+                    if img.startswith('data:'):
+                        # Already in data URI format, use as-is
+                        message_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": img}
+                        })
+                    elif img.startswith('http'):
+                        # External URL
+                        message_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": img}
+                        })
+
+            # Use content array format if we have images, otherwise simple string
+            if request.images and message_content:
+                messages = [{"role": "user", "content": message_content}]
+            else:
+                messages = [{"role": "user", "content": content}]
 
             async for event in hermes_client.chat_completion(
                 messages=messages,
