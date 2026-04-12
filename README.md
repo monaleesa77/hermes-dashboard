@@ -228,9 +228,9 @@ Access Hermes Dashboard from your mobile device:
 2. Tap the menu (three dots)
 3. Select "Install App" or "Add to Home Screen"
 
-### HTTPS for Secure Access
+### HTTPS for Secure Access (Optional)
 
-To enable HTTPS (recommended for mobile):
+> **Note**: The simplified configuration uses HTTP only. For HTTPS (if needed in production):
 
 ```bash
 # 1. Generate SSL certificates
@@ -238,7 +238,7 @@ cd backend
 ./generate-ssl.sh
 
 # 2. Enable HTTPS in .env
-echo "USE_HTTPS=true" >> .env
+sed -i '' 's/USE_HTTPS=false/USE_HTTPS=true/' .env
 
 # 3. Restart the server
 # Access via https://[IP]:10007
