@@ -11,7 +11,7 @@
 >
 > 这是 **非官方** 的 PinchChat 或 Hermes 项目。
 
-![仪表盘预览](./assets/preview.png)
+![仪表盘预览](./assets/01-main-dashboard.png)
 
 ## ✨ 功能特性
 

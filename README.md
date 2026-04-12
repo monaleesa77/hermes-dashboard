@@ -11,7 +11,7 @@ A sleek, modern web dashboard for [Hermes AI Agent](https://github.com/hermes-ai
 >
 > This is **not an official** PinchChat or Hermes project.
 
-![Dashboard Preview](./assets/preview.png)
+![Dashboard Preview](./assets/01-main-dashboard.png)
 
 ## ✨ Features
 
