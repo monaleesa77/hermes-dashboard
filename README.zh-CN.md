@@ -218,7 +218,17 @@ curl http://localhost:8643/api/health
 
 ## 📸 截图
 
-*即将推出*
+![主界面](./assets/01-main-dashboard.png)
+*主界面 - 暗黑主题*
+
+![设置面板](./assets/02-settings-panel.png)
+*设置面板 - 支持字体大小、页面缩放、主题切换*
+
+![亮色主题](./assets/03-light-theme.png)
+*亮色主题*
+
+![OLED 主题](./assets/04-oled-theme.png)
+*OLED 纯黑主题*
 
 ---
 
