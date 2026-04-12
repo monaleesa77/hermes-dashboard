@@ -54,24 +54,6 @@ class ApiService {
   async getGatewayStatus(): Promise<GatewayStatus> {
     return this.fetch('/gateway/status');
   }
-
-  // File upload
-  async uploadFile(file: File): Promise<{ success: boolean; data: string; filename: string; mime_type: string }> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${API_BASE}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
 }
 
 export const api = new ApiService();

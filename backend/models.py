@@ -29,7 +29,6 @@ class ChatMessage(BaseModel):
     timestamp: datetime
     tool_calls: List[ToolCall] = []
     thinking: Optional[str] = None
-    image_urls: List[str] = []
     model: Optional[str] = None
 
 

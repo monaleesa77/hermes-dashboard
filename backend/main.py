@@ -96,37 +96,6 @@ app.add_middleware(
 
 
 # =============================================================================
-# File Upload
-# =============================================================================
-
-import base64
-from fastapi import File, UploadFile
-
-@app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
-    """Upload a file and return base64 encoded data."""
-    try:
-        # Read file content
-        content = await file.read()
-
-        # Get MIME type
-        mime_type = file.content_type or "application/octet-stream"
-
-        # Convert to base64
-        base64_data = base64.b64encode(content).decode('utf-8')
-
-        return {
-            "success": True,
-            "filename": file.filename,
-            "mime_type": mime_type,
-            "size": len(content),
-            "data": f"data:{mime_type};base64,{base64_data}"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-
-
-# =============================================================================
 # REST API Endpoints
 # =============================================================================
 
@@ -239,52 +208,14 @@ async def websocket_chat(websocket: WebSocket):
             data = await websocket.receive_json()
             request = ChatRequest(**data)
 
-            # Process images if provided
-            images = data.get('images', [])
-
             # Send acknowledgment
             await websocket.send_json({
                 "type": "message_received",
                 "timestamp": datetime.now().isoformat(),
             })
 
-            # Stream response from Hermes
-            # Build message content with images if provided
-            content = request.message
-
-            # If message is empty but we have images, use a placeholder
-            if not content and request.images:
-                content = "Analyze this image"
-
-            # Build messages array for vision-capable models
-            # Format: content as array with text and image_url blocks
-            message_content = []
-
-            # Add text content
-            if content:
-                message_content.append({"type": "text", "text": content})
-
-            # Add image content
-            if request.images:
-                for img in request.images:
-                    if img.startswith('data:'):
-                        # Already in data URI format, use as-is
-                        message_content.append({
-                            "type": "image_url",
-                            "image_url": {"url": img}
-                        })
-                    elif img.startswith('http'):
-                        # External URL
-                        message_content.append({
-                            "type": "image_url",
-                            "image_url": {"url": img}
-                        })
-
-            # Use content array format if we have images, otherwise simple string
-            if request.images and message_content:
-                messages = [{"role": "user", "content": message_content}]
-            else:
-                messages = [{"role": "user", "content": content}]
+            # Build message for Hermes
+            messages = [{"role": "user", "content": request.message}]
 
             async for event in hermes_client.chat_completion(
                 messages=messages,

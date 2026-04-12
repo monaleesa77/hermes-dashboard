@@ -262,22 +262,6 @@ export const ChatMessage: FC<ChatMessageProps> = ({
             </div>
           )}
 
-          {/* Images */}
-          {message.image_urls && message.image_urls.length > 0 && (
-            <div className="flex gap-2 mt-3 flex-wrap">
-              {message.image_urls.map((url, idx) => (
-                <img
-                  key={idx}
-                  src={url}
-                  alt="Attached"
-                  className="max-w-[200px] rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
-                  style={{ borderColor: 'var(--border-color)' }}
-                  onClick={() => window.open(url, '_blank')}
-                />
-              ))}
-            </div>
-          )}
-
           {/* Streaming Indicator */}
           {isStreaming && (
             <span
