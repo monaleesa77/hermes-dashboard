@@ -96,6 +96,37 @@ app.add_middleware(
 
 
 # =============================================================================
+# File Upload
+# =============================================================================
+
+import base64
+from fastapi import File, UploadFile
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a file and return base64 encoded data."""
+    try:
+        # Read file content
+        content = await file.read()
+
+        # Get MIME type
+        mime_type = file.content_type or "application/octet-stream"
+
+        # Convert to base64
+        base64_data = base64.b64encode(content).decode('utf-8')
+
+        return {
+            "success": True,
+            "filename": file.filename,
+            "mime_type": mime_type,
+            "size": len(content),
+            "data": f"data:{mime_type};base64,{base64_data}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+# =============================================================================
 # REST API Endpoints
 # =============================================================================
 
@@ -208,6 +239,9 @@ async def websocket_chat(websocket: WebSocket):
             data = await websocket.receive_json()
             request = ChatRequest(**data)
 
+            # Process images if provided
+            images = data.get('images', [])
+
             # Send acknowledgment
             await websocket.send_json({
                 "type": "message_received",
@@ -215,7 +249,27 @@ async def websocket_chat(websocket: WebSocket):
             })
 
             # Stream response from Hermes
-            messages = [{"role": "user", "content": request.message}]
+            # Build message content with images if provided
+            content = request.message
+
+            # If message is empty but we have images, use a placeholder
+            if not content and request.images:
+                content = "Analyze this image"
+
+            # Add image references to content if present
+            if request.images:
+                image_descriptions = []
+                for i, img in enumerate(request.images, 1):
+                    if img.startswith('data:'):
+                        # Extract mime type
+                        mime = img.split(';')[0].split(':')[1]
+                        image_descriptions.append(f"[Image {i}: {mime}]")
+                    else:
+                        image_descriptions.append(f"[Image {i}]")
+                if image_descriptions:
+                    content = f"{content}\n\n{' '.join(image_descriptions)}"
+
+            messages = [{"role": "user", "content": content}]
 
             async for event in hermes_client.chat_completion(
                 messages=messages,

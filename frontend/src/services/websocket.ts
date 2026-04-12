@@ -74,11 +74,12 @@ export class WebSocketService {
     }
   }
 
-  sendMessage(content: string, sessionId?: string): void {
+  sendMessage(content: string, sessionId?: string, images?: string[]): void {
     this.send(JSON.stringify({
       message: content,
       session_id: sessionId,
       platform: 'api',
+      images: images || [],
     }));
   }
 

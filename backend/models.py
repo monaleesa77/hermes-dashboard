@@ -55,7 +55,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     platform: str = "api"
-    image: Optional[str] = None  # base64 encoded image
+    images: List[str] = []  # base64 encoded images
 
 
 class StreamEvent(BaseModel):

@@ -222,14 +222,15 @@ function App() {
     }
   };
 
-  const handleSendMessage = (content: string) => {
-    if (!content.trim()) return;
+  const handleSendMessage = (content: string, images?: string[]) => {
+    if (!content.trim() && (!images || images.length === 0)) return;
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content,
+      content: content.trim() || (images && images.length > 0 ? 'Sent images' : ''),
       timestamp: new Date().toISOString(),
+      image_urls: images || [],
     };
 
     setCurrentSession((session) => {
@@ -240,7 +241,7 @@ function App() {
       };
     });
 
-    wsService.sendMessage(content, currentSession?.info.id);
+    wsService.sendMessage(content, currentSession?.info.id, images);
   };
 
   const handleExportSession = () => {
