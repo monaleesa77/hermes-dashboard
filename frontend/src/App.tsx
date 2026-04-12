@@ -27,6 +27,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [hermesConnected, setHermesConnected] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
+  const [isWaiting, setIsWaiting] = useState(false);
 
   // Settings
   const [fontSize, setFontSize] = useState(() => {
@@ -164,6 +165,7 @@ function App() {
   const handleWebSocketMessage = useCallback((event: { type: string; content?: string; tool_calls?: unknown[]; error?: string }) => {
     switch (event.type) {
       case 'content_delta':
+        setIsWaiting(false);
         setStreamingMessage((prev) => {
           if (!prev) {
             return {
@@ -201,6 +203,7 @@ function App() {
 
       case 'error':
         console.error('WebSocket error:', event.error);
+        setIsWaiting(false);
         break;
     }
   }, []);
@@ -221,6 +224,8 @@ function App() {
       const session = await api.createSession('api', 'New Chat');
       setSessions((prev) => [session.info, ...prev]);
       setCurrentSession(session);
+      // Save as last active session
+      localStorage.setItem('hermes-last-session', session.info.id);
     } catch (err) {
       console.error('Failed to create session:', err);
     }
@@ -241,6 +246,11 @@ function App() {
   const handleSendMessage = (content: string, images?: string[]) => {
     if (!content.trim() && (!images || images.length === 0)) return;
 
+    // Ensure current session is saved
+    if (currentSession) {
+      localStorage.setItem('hermes-last-session', currentSession.info.id);
+    }
+
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -258,6 +268,7 @@ function App() {
     });
 
     wsService.sendMessage(content, currentSession?.info.id, images);
+    setIsWaiting(true);
   };
 
   const handleExportSession = () => {
@@ -392,6 +403,7 @@ function App() {
           <Chat
             session={currentSession}
             streamingMessage={streamingMessage}
+            isWaiting={isWaiting}
             onSendMessage={handleSendMessage}
             fontSize={fontSize}
           />

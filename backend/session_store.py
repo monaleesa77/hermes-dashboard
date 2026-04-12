@@ -42,12 +42,34 @@ class SessionStore:
         if not self.sessions_dir.exists():
             return
 
+        # First load Hermes Gateway format (has complete messages)
+        hermes_sessions = {}
+        for file_path in self.sessions_dir.glob("session_*.json"):
+            session_id = file_path.stem.replace("session_", "")
+            try:
+                session_data = await self._parse_hermes_json(file_path)
+                hermes_sessions[session_id] = session_data
+                async with self._lock:
+                    self._cache[session_id] = session_data
+            except Exception as e:
+                print(f"Error loading Hermes session {session_id}: {e}")
+
+        # Then load Dashboard format (.jsonl) and merge metadata
         for file_path in self.sessions_dir.glob("*.jsonl"):
             session_id = file_path.stem
             try:
-                session_data = await self._parse_session_file(file_path)
-                async with self._lock:
-                    self._cache[session_id] = session_data
+                if session_id in hermes_sessions:
+                    # Already loaded from Hermes format, just update metadata
+                    async with self._lock:
+                        cached = self._cache.get(session_id)
+                        if cached:
+                            jsonl_data = await self._parse_session_file(file_path)
+                            cached["info"] = jsonl_data["info"]
+                else:
+                    # No Hermes format, use JSONL only
+                    session_data = await self._parse_session_file(file_path)
+                    async with self._lock:
+                        self._cache[session_id] = session_data
             except Exception as e:
                 print(f"Error loading session {session_id}: {e}")
 
@@ -110,6 +132,54 @@ class SessionStore:
         metadata["message_count"] = len(messages)
         return {"info": metadata, "messages": messages}
 
+    async def _parse_hermes_json(self, file_path: Path) -> dict:
+        """Parse Hermes Gateway's session_*.json format."""
+        import json
+
+        messages = []
+        metadata = {
+            "id": file_path.stem.replace("session_", ""),  # Remove 'session_' prefix
+            "platform": "unknown",
+            "chat_id": "",
+            "name": None,
+            "created_at": datetime.fromtimestamp(file_path.stat().st_ctime),
+            "updated_at": datetime.fromtimestamp(file_path.stat().st_mtime),
+            "message_count": 0,
+            "model": None,
+            "token_usage": {"input": 0, "output": 0},
+        }
+
+        try:
+            async with aiofiles.open(file_path, 'r') as f:
+                content = await f.read()
+            data = json.loads(content)
+
+            # Extract metadata from Hermes format
+            metadata["id"] = data.get("session_id", metadata["id"])
+            metadata["platform"] = data.get("platform", "unknown")
+            metadata["chat_id"] = f"hermes:{metadata['id']}"
+            metadata["model"] = data.get("model")
+            metadata["name"] = f"Session {metadata['id'][:8]}"
+
+            # Update timestamps
+            if data.get("session_start"):
+                metadata["created_at"] = datetime.fromisoformat(data["session_start"].replace("Z", "+00:00"))
+            if data.get("last_updated"):
+                metadata["updated_at"] = datetime.fromisoformat(data["last_updated"].replace("Z", "+00:00"))
+
+            # Parse messages
+            for msg in data.get("messages", []):
+                parsed_msg = self._parse_message(msg)
+                if parsed_msg:
+                    messages.append(parsed_msg)
+
+            metadata["message_count"] = len(messages)
+
+        except Exception as e:
+            print(f"Error parsing Hermes JSON {file_path}: {e}")
+
+        return {"info": metadata, "messages": messages}
+
     def _parse_message(self, msg: dict) -> Optional[dict]:
         """Parse a single message from JSONL format."""
         role = msg.get("role")
@@ -170,13 +240,34 @@ class SessionStore:
         }
 
     async def get_sessions(self) -> List[dict]:
-        """Get list of all sessions."""
+        """Get list of all sessions - always re-scan from disk, sorted by newest first."""
+        # Always re-scan to catch new sessions created by Hermes Gateway
+        await self._load_all_sessions()
         async with self._lock:
-            return [data["info"] for data in self._cache.values()]
+            sessions = [data["info"] for data in self._cache.values()]
+            # Sort by created_at descending (newest first)
+            sessions.sort(key=lambda s: s.get("created_at", ""), reverse=True)
+            return sessions
 
     async def get_session(self, session_id: str) -> Optional[dict]:
-        """Get full session details including messages."""
-        # Refresh from file to get latest
+        """Get full session details - always read fresh from disk."""
+        # Always re-scan to get latest messages from Hermes Gateway
+        await self._load_all_sessions()
+
+        # Try Hermes Gateway format first (has complete messages)
+        hermes_file = self.sessions_dir / f"session_{session_id}.json"
+        if hermes_file.exists():
+            session_data = await self._parse_hermes_json(hermes_file)
+            # Merge metadata from .jsonl if exists
+            jsonl_file = self.sessions_dir / f"{session_id}.jsonl"
+            if jsonl_file.exists():
+                meta = await self._parse_session_file(jsonl_file)
+                session_data["info"] = meta["info"]
+            async with self._lock:
+                self._cache[session_id] = session_data
+            return session_data
+
+        # Fallback to .jsonl format
         file_path = self.sessions_dir / f"{session_id}.jsonl"
         if file_path.exists():
             session_data = await self._parse_session_file(file_path)

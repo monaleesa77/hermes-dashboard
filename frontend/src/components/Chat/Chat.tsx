@@ -1,12 +1,13 @@
 import { useRef, useEffect, FC } from 'react';
 import { ChatInput } from './ChatInput';
 import { ChatMessage } from './ChatMessage';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot, Sparkles, Loader2 } from 'lucide-react';
 import type { SessionDetail, ChatMessage as ChatMessageType } from '../../types';
 
 interface ChatProps {
   session: SessionDetail | null;
   streamingMessage: ChatMessageType | null;
+  isWaiting?: boolean;
   onSendMessage: (content: string) => void;
   fontSize?: number;
 }
@@ -14,6 +15,7 @@ interface ChatProps {
 export const Chat: FC<ChatProps> = ({
   session,
   streamingMessage,
+  isWaiting = false,
   onSendMessage,
   fontSize = 14,
 }) => {
@@ -78,6 +80,26 @@ export const Chat: FC<ChatProps> = ({
               isStreaming={true}
               fontSize={fontSize}
             />
+          )}
+
+          {isWaiting && !streamingMessage && (
+            <div className="flex items-start gap-3 animate-fadeIn">
+              <div
+                className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: 'var(--bg-elevated)' }}
+              >
+                <Bot className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              </div>
+              <div
+                className="px-3.5 py-2.5 rounded-xl"
+                style={{
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                }}
+              >
+                <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--accent)' }} />
+              </div>
+            </div>
           )}
 
           <div ref={messagesEndRef} />
