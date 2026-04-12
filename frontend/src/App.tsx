@@ -128,6 +128,20 @@ function App() {
         const sessionList = await api.getSessions();
         setSessions(sessionList);
 
+        // Auto-restore last active session
+        const lastSessionId = localStorage.getItem('hermes-last-session');
+        if (lastSessionId && sessionList.length > 0) {
+          const sessionExists = sessionList.find(s => s.id === lastSessionId);
+          if (sessionExists) {
+            try {
+              const session = await api.getSession(lastSessionId);
+              setCurrentSession(session);
+            } catch (err) {
+              console.error('Failed to restore last session:', err);
+            }
+          }
+        }
+
         wsService.onMessage = handleWebSocketMessage;
         wsService.onClose = () => setIsConnected(false);
         wsService.connect();
@@ -195,6 +209,8 @@ function App() {
     try {
       const session = await api.getSession(sessionId);
       setCurrentSession(session);
+      // Save as last active session
+      localStorage.setItem('hermes-last-session', sessionId);
     } catch (err) {
       console.error('Failed to load session:', err);
     }
