@@ -1,4 +1,4 @@
-# 给 Hermes AI 搭了个专属控制中心！✨ 颜值和功能都在线
+# 给Hermes Agent搭了个专属控制中心！✨ 
 
 姐妹们！用 Hermes AI Agent 的看过来！👋
 
