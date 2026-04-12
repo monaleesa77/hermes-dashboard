@@ -298,3 +298,79 @@ curl http://localhost:8643/api/health
 ---
 
 Made with ❤️ for the Hermes community
+
+---
+
+## ⚠️ Mobile Access Risk Warning
+
+> **Important Notice**: Mobile access features are provided for development and testing purposes only. Please read the following risks carefully before use.
+
+### 🚨 Known Issues and Risks
+
+#### 1. Connection May Fail
+- **Network Environment**: Mobile and computer must be on the **same WiFi network**, but some routers/network environments may block internal communication
+- **Firewall**: macOS/Windows firewalls may block external access to port 10007/8643
+- **Mobile Hotspot**: Some mobile hotspots do not allow device-to-device communication
+
+#### 2. Security Risks of HTTP Mode
+- **Current Configuration**: This simplified version uses HTTP only (not HTTPS)
+- **Risk Description**: HTTP transmits data in plain text and may be intercepted in public WiFi environments
+- **Recommendation**: Use only in trusted home networks, do not use in public WiFi
+
+#### 3. HTTPS Certificate Issues (If HTTPS Enabled)
+- **Self-signed Certificate**: Mobile browsers will display security warnings
+- **iOS**: Need to manually install and trust certificate files
+- **Android**: Different brands of phones have different operating methods
+- **Validity Period**: Self-signed certificates usually have a validity period and need to be regenerated periodically
+
+#### 4. CORS Configuration Issues
+- **Error Manifestation**: Browser console shows `Access-Control-Allow-Origin` related errors
+- **Solution**: Need to manually add the phone's IP address to `backend/.env`'s `CORS_ORIGINS`
+- **Dynamic IP**: If the computer's IP changes, need to reconfigure
+
+### ✅ Troubleshooting Steps
+
+If mobile access fails, please check in order:
+
+1. **Confirm All Services Running**
+   ```bash
+   # Check frontend
+   curl http://localhost:10007
+   
+   # Check backend
+   curl http://localhost:8643/api/health
+   ```
+
+2. **Get Correct IP Address**
+   ```bash
+   # macOS
+   ipconfig getifaddr en0
+   
+   # Should return IP in the format 192.168.x.x or 10.x.x.x
+   # Do NOT use 127.0.0.1 or localhost
+   ```
+
+3. **Test from Computer**
+   ```bash
+   # Use the obtained IP
+   curl http://YOUR_IP:10007
+   ```
+
+4. **Check Firewall**
+   - macOS: System Settings -> Network -> Firewall
+   - Temporarily disable for testing
+
+5. **Confirm Same WiFi**
+   - Phone and computer must be connected to the same WiFi
+   - Some corporate/educational networks may block internal communication
+
+### 📖 More Documentation
+
+- **Quick Start**: [MOBILE_QUICKSTART.md](MOBILE_QUICKSTART.md)
+- **Detailed Guide**: [README_MOBILE.md](README_MOBILE.md)
+- **Troubleshooting**: [MOBILE_TROUBLESHOOTING.md](MOBILE_TROUBLESHOOTING.md)
+
+### ⚠️ Disclaimer
+
+Mobile access features are for development and testing purposes only. The authors are not responsible for any security issues, data leaks, or other losses that may result from using this feature. Please use with caution in production environments.
+
