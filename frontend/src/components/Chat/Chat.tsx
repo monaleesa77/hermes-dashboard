@@ -86,10 +86,11 @@ export const Chat: FC<ChatProps> = ({
 
       {/* Input - Fixed at bottom */}
       <div
-        className="flex-shrink-0 border-t px-4 py-4"
+        className="flex-shrink-0 border-t px-4 py-4 md:pb-4"
         style={{
           backgroundColor: 'var(--bg-secondary)',
           borderColor: 'var(--border-color)',
+          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <div className="max-w-3xl mx-auto">

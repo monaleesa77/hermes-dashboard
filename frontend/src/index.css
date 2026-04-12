@@ -520,3 +520,74 @@
   background-color: var(--accent);
   animation: pulse-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
+
+/* ===== Mobile Responsive Styles ===== */
+
+/* Hide scrollbar for mobile quick session switcher */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile bottom safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 767px) {
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger touch targets for session items */
+  .session-item {
+    padding: 12px 16px;
+  }
+
+  /* Adjust message padding for smaller screens */
+  .prose {
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+
+  /* Mobile nav button styling */
+  .mobile-nav-button {
+    @apply flex flex-col items-center justify-center;
+    min-height: 50px;
+    min-width: 60px;
+  }
+
+  /* Smaller padding in chat on mobile */
+  .chat-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Full width modals on mobile */
+  .mobile-modal {
+    @apply fixed inset-0 z-50;
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar-width {
+    width: 240px;
+  }
+}
+
+/* Prevent pull-to-refresh on mobile (optional) */
+@supports (overscroll-behavior: none) {
+  body {
+    overscroll-behavior: none;
+  }
+}

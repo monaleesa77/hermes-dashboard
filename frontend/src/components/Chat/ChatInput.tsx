@@ -106,9 +106,9 @@ export const ChatInput: FC<ChatInputProps> = ({ onSend }) => {
         </button>
       </div>
 
-      {/* Helper Text */}
+      {/* Helper Text - Hidden on mobile */}
       <div
-        className="text-center mt-2 text-xs"
+        className="text-center mt-2 text-xs hidden md:block"
         style={{ color: 'var(--text-muted)' }}
       >
         Press <kbd className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--bg-tertiary)' }}>Enter</kbd> to send, <kbd className="px-1 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--bg-tertiary)' }}>Shift+Enter</kbd> for new line

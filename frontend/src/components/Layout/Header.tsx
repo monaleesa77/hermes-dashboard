@@ -99,8 +99,8 @@ export const Header: FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Connection Status */}
-        <div className="flex items-center gap-3 text-sm mr-4">
+        {/* Connection Status - Hidden on mobile */}
+        <div className="hidden md:flex items-center gap-3 text-sm mr-4">
           <div className="flex items-center gap-1.5">
             <div
               className="w-2 h-2 rounded-full"
@@ -127,6 +127,17 @@ export const Header: FC<HeaderProps> = ({
             />
             <span style={{ color: 'var(--text-muted)' }}>Dashboard</span>
           </div>
+        </div>
+
+        {/* Mobile Connection Indicator - Single dot only */}
+        <div className="flex md:hidden items-center mr-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{
+              backgroundColor: hermesConnected && isConnected ? 'var(--success)' : 'var(--error)',
+              boxShadow: hermesConnected && isConnected ? '0 0 8px var(--success)' : 'none',
+            }}
+          />
         </div>
 
         {/* Export Button */}

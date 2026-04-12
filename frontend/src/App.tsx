@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Chat } from './components/Chat/Chat';
 import { Header } from './components/Layout/Header';
+import { MobileNav } from './components/Layout/MobileNav';
 import { wsService } from './services/websocket';
 import { api } from './services/api';
 import type { SessionInfo, SessionDetail, ChatMessage } from './types';
@@ -54,8 +55,18 @@ function App() {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Persist settings
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   useEffect(() => {
     localStorage.setItem('hermes-font-size', fontSize.toString());
   }, [fontSize]);
@@ -299,23 +310,58 @@ function App() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <div style={{ zoom: zoom }}>
-          <Sidebar
-            sessions={sessions}
-            currentSessionId={currentSession?.info.id}
-            onSelectSession={handleSelectSession}
-            onNewSession={handleNewSession}
-            onDeleteSession={handleDeleteSession}
-            onReorder={handleReorderSessions}
-            width={sidebarWidth}
-          />
-        </div>
+        {/* Desktop Sidebar */}
+        {!isMobile && (
+          <div style={{ zoom: zoom }}>
+            <Sidebar
+              sessions={sessions}
+              currentSessionId={currentSession?.info.id}
+              onSelectSession={handleSelectSession}
+              onNewSession={handleNewSession}
+              onDeleteSession={handleDeleteSession}
+              onReorder={handleReorderSessions}
+              width={sidebarWidth}
+              isMobile={false}
+            />
+          </div>
+        )}
 
-        {/* Resizer */}
-        <div
-          className="resizer"
-          onMouseDown={() => setIsDragging(true)}
-        />
+        {/* Mobile Sidebar Overlay */}
+        {isMobile && isSidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+            <div className="fixed left-0 top-0 h-full z-50" style={{ zoom: zoom }}>
+              <Sidebar
+                sessions={sessions}
+                currentSessionId={currentSession?.info.id}
+                onSelectSession={(id) => {
+                  handleSelectSession(id);
+                  setIsSidebarOpen(false);
+                }}
+                onNewSession={() => {
+                  handleNewSession();
+                  setIsSidebarOpen(false);
+                }}
+                onDeleteSession={handleDeleteSession}
+                onReorder={handleReorderSessions}
+                width={280}
+                isMobile={true}
+                onClose={() => setIsSidebarOpen(false)}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Resizer - Desktop only */}
+        {!isMobile && (
+          <div
+            className="resizer"
+            onMouseDown={() => setIsDragging(true)}
+          />
+        )}
 
         <main
           className="flex-1 min-w-0"
@@ -334,6 +380,17 @@ function App() {
           />
         </main>
       </div>
+
+      {/* Mobile Navigation */}
+      {isMobile && (
+        <MobileNav
+          sessions={sessions}
+          currentSessionId={currentSession?.info.id}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewSession}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+        />
+      )}
     </div>
   );
 }

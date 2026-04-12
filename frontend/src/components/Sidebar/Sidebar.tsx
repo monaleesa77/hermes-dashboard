@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { Plus, Trash2, Clock, GripVertical, MessageCircle } from 'lucide-react';
+import { Plus, Trash2, Clock, GripVertical, MessageCircle, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { SessionInfo } from '../../types';
 
@@ -11,6 +11,8 @@ interface SidebarProps {
   onDeleteSession: (sessionId: string) => void;
   onReorder?: (dragIndex: number, hoverIndex: number) => void;
   width: number;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
 const PLATFORM_ICONS: Record<string, { emoji: string; color: string }> = {
@@ -35,6 +37,8 @@ export const Sidebar: FC<SidebarProps> = ({
   onDeleteSession,
   onReorder,
   width,
+  isMobile,
+  onClose,
 }) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -62,11 +66,31 @@ export const Sidebar: FC<SidebarProps> = ({
     <aside
       className="flex flex-col border-r flex-shrink-0 h-full"
       style={{
-        width: `${width}px`,
+        width: isMobile ? '280px' : `${width}px`,
         backgroundColor: 'var(--bg-secondary)',
         borderColor: 'var(--border-color)',
       }}
     >
+      {/* Mobile Close Button */}
+      {isMobile && (
+        <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>会话列表</span>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--bg-tertiary)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+            }}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       {/* New Chat Button - Fixed at top */}
       <div className="p-3 flex-shrink-0">
         <button
