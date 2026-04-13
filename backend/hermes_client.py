@@ -5,6 +5,8 @@ import aiohttp
 from typing import AsyncGenerator, Dict, Any, Optional
 from datetime import datetime
 
+from config_loader import get_config
+
 
 class HermesClient:
     """Client for Hermes API Server (OpenAI-compatible)."""
@@ -16,21 +18,25 @@ class HermesClient:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
+        self._config = get_config()
+
+    def _default_model(self) -> str:
+        return self._config.default_model
 
     async def chat_completion(
         self,
         messages: list,
-        model: str = "claude-sonnet-4-6",
+        model: Optional[str] = None,
         stream: bool = True,
         session_id: Optional[str] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Send chat completion request with streaming."""
+        model = model or self._default_model()
 
         payload = {
             "model": model,
             "messages": messages,
             "stream": stream,
-            "tools": None,  # Hermes will use default tools
         }
 
         # Add session continuity header if provided
@@ -88,14 +94,21 @@ class HermesClient:
             yield event
 
     async def get_models(self) -> list:
-        """Get list of available models."""
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{self.base_url}/v1/models",
-                headers=self.headers,
-            ) as response:
-                data = await response.json()
-                return data.get("data", [])
+        """Get list of available models from gateway."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{self.base_url}/v1/models",
+                    headers=self.headers,
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return data.get("data", [])
+                    # 401/404/其他 → 降级：不返回假数据
+                    return []
+        except Exception:
+            return []
 
     async def health_check(self) -> Dict[str, Any]:
         """Check if Hermes API is healthy."""
@@ -115,8 +128,9 @@ class HermesClient:
                 "error": str(e),
             }
 
-    async def create_run(self, messages: list, model: str = "claude-sonnet-4-6") -> str:
+    async def create_run(self, messages: list, model: Optional[str] = None) -> str:
         """Create a new run and return run_id for SSE events."""
+        model = model or self._default_model()
         payload = {
             "model": model,
             "messages": messages,
