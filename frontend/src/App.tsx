@@ -55,6 +55,22 @@ function App() {
     return saved ? parseInt(saved, 10) : 260;
   });
 
+  // Visibility toggles (global)
+  const [showThinking, setShowThinking] = useState(() => {
+    const saved = localStorage.getItem('hermes-visibility-thinking');
+    return saved !== 'false';
+  });
+
+  const [showTools, setShowTools] = useState(() => {
+    const saved = localStorage.getItem('hermes-visibility-tools');
+    return saved !== 'false';
+  });
+
+  const [showToolResults, setShowToolResults] = useState(() => {
+    const saved = localStorage.getItem('hermes-visibility-tool-results');
+    return saved !== 'false';
+  });
+
   const [isDragging, setIsDragging] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -89,6 +105,18 @@ function App() {
   useEffect(() => {
     localStorage.setItem('hermes-sidebar-width', sidebarWidth.toString());
   }, [sidebarWidth]);
+
+  useEffect(() => {
+    localStorage.setItem('hermes-visibility-thinking', showThinking.toString());
+  }, [showThinking]);
+
+  useEffect(() => {
+    localStorage.setItem('hermes-visibility-tools', showTools.toString());
+  }, [showTools]);
+
+  useEffect(() => {
+    localStorage.setItem('hermes-visibility-tool-results', showToolResults.toString());
+  }, [showToolResults]);
 
   // Resizer drag handlers
   useEffect(() => {
@@ -334,6 +362,12 @@ function App() {
           zoom={zoom}
           onZoomChange={setZoom}
           onExport={currentSession ? handleExportSession : undefined}
+          showThinking={showThinking}
+          onShowThinkingChange={setShowThinking}
+          showTools={showTools}
+          onShowToolsChange={setShowTools}
+          showToolResults={showToolResults}
+          onShowToolResultsChange={setShowToolResults}
         />
       </div>
 
@@ -406,6 +440,9 @@ function App() {
             isWaiting={isWaiting}
             onSendMessage={handleSendMessage}
             fontSize={fontSize}
+            showThinking={showThinking}
+            showTools={showTools}
+            showToolResults={showToolResults}
           />
         </main>
       </div>

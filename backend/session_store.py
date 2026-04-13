@@ -91,6 +91,7 @@ class SessionStore:
         if not file_path.exists():
             return {"info": metadata, "messages": messages}
 
+        tool_messages = []
         try:
             async with aiofiles.open(file_path, 'r') as f:
                 content = await f.read()
@@ -110,8 +111,10 @@ class SessionStore:
                         metadata["model"] = msg.get("model")
                         continue
 
-                    # Parse regular messages
-                    if "role" in msg and msg["role"] in ["user", "assistant", "system", "tool"]:
+                    # Collect tool messages, parse others
+                    if msg.get("role") == "tool":
+                        tool_messages.append(msg)
+                    elif "role" in msg and msg["role"] in ["user", "assistant", "system"]:
                         parsed_msg = self._parse_message(msg)
                         if parsed_msg:
                             messages.append(parsed_msg)
@@ -129,6 +132,7 @@ class SessionStore:
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
 
+        messages = self._attach_tool_results(messages, tool_messages)
         metadata["message_count"] = len(messages)
         return {"info": metadata, "messages": messages}
 
@@ -167,11 +171,18 @@ class SessionStore:
             if data.get("last_updated"):
                 metadata["updated_at"] = datetime.fromisoformat(data["last_updated"].replace("Z", "+00:00"))
 
-            # Parse messages
+            # Parse messages, collecting tool messages separately
+            tool_messages = []
             for msg in data.get("messages", []):
-                parsed_msg = self._parse_message(msg)
-                if parsed_msg:
-                    messages.append(parsed_msg)
+                if msg.get("role") == "tool":
+                    tool_messages.append(msg)
+                else:
+                    parsed_msg = self._parse_message(msg)
+                    if parsed_msg:
+                        messages.append(parsed_msg)
+
+            # Attach standalone tool results to their parent assistant messages
+            messages = self._attach_tool_results(messages, tool_messages)
 
             metadata["message_count"] = len(messages)
 
@@ -218,15 +229,9 @@ class SessionStore:
                     "status": "pending"
                 })
 
-        # Extract tool results
-        if role == "tool" and "tool_call_id" in msg:
-            tool_calls.append({
-                "id": msg["tool_call_id"],
-                "name": "result",
-                "arguments": {},
-                "result": content,
-                "status": "completed"
-            })
+        # Standalone tool result messages are handled separately by _attach_tool_results
+        if role == "tool":
+            return None
 
         return {
             "id": msg.get("id", ""),
@@ -238,6 +243,36 @@ class SessionStore:
             "image_urls": image_urls,
             "model": msg.get("model")
         }
+
+    def _attach_tool_results(self, messages: list, tool_messages: Optional[list] = None) -> list:
+        """Attach standalone role=tool messages as tool_results on their parent assistant messages."""
+        # Build tool_results_map from passed-in tool_messages
+        tool_results_map: dict = {}
+        if tool_messages:
+            for msg in tool_messages:
+                if msg.get("tool_call_id"):
+                    tool_results_map[msg["tool_call_id"]] = {
+                        "id": msg.get("id", ""),
+                        "tool_call_id": msg["tool_call_id"],
+                        "content": msg.get("content", ""),
+                        "timestamp": msg.get("timestamp", ""),
+                    }
+
+        # Attach tool results to assistant messages that initiated the calls
+        for msg in messages:
+            if msg.get("role") == "assistant" and msg.get("tool_calls"):
+                attached_results = []
+                for tc in msg["tool_calls"]:
+                    tc_id = tc.get("id")
+                    if tc_id in tool_results_map:
+                        tc["result"] = tool_results_map[tc_id]["content"]
+                        tc["status"] = "completed"
+                        attached_results.append(tool_results_map[tc_id])
+                        del tool_results_map[tc_id]
+                if attached_results:
+                    msg["tool_results"] = attached_results
+
+        return messages
 
     async def get_sessions(self) -> List[dict]:
         """Get list of all sessions - always re-scan from disk, sorted by newest first."""

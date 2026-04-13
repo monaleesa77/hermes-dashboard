@@ -4,12 +4,55 @@ import { ChatMessage } from './ChatMessage';
 import { Bot, Sparkles, Loader2 } from 'lucide-react';
 import type { SessionDetail, ChatMessage as ChatMessageType } from '../../types';
 
+/** Group consecutive messages by role for cleaner display */
+function groupMessages(messages: ChatMessageType[]): ChatMessageType[] {
+  if (messages.length === 0) return [];
+
+  const groups: ChatMessageType[] = [];
+  let currentGroup: ChatMessageType | null = null;
+
+  for (const msg of messages) {
+    if (!currentGroup || currentGroup.role !== msg.role) {
+      // Start new group
+      currentGroup = { ...msg };
+      groups.push(currentGroup);
+    } else {
+      // Same role — merge into current group
+      if (msg.content) currentGroup.content = msg.content;
+      if (msg.thinking) currentGroup.thinking = msg.thinking;
+      if (msg.tool_calls?.length) {
+        const existingIds = new Set(currentGroup.tool_calls?.map(tc => tc.id) ?? []);
+        const newCalls = msg.tool_calls.filter(tc => !existingIds.has(tc.id));
+        currentGroup.tool_calls = [
+          ...(currentGroup.tool_calls ?? []),
+          ...newCalls
+        ];
+      }
+      if (msg.tool_results?.length) {
+        const existingIds = new Set(currentGroup.tool_results?.map(tr => tr.tool_call_id) ?? []);
+        const newResults = msg.tool_results.filter(tr => !existingIds.has(tr.tool_call_id));
+        currentGroup.tool_results = [
+          ...(currentGroup.tool_results ?? []),
+          ...newResults
+        ];
+      }
+      currentGroup.timestamp = msg.timestamp;
+      if (msg.model) currentGroup.model = msg.model;
+    }
+  }
+
+  return groups;
+}
+
 interface ChatProps {
   session: SessionDetail | null;
   streamingMessage: ChatMessageType | null;
   isWaiting?: boolean;
   onSendMessage: (content: string) => void;
   fontSize?: number;
+  showThinking?: boolean;
+  showTools?: boolean;
+  showToolResults?: boolean;
 }
 
 export const Chat: FC<ChatProps> = ({
@@ -18,6 +61,9 @@ export const Chat: FC<ChatProps> = ({
   isWaiting = false,
   onSendMessage,
   fontSize = 14,
+  showThinking = true,
+  showTools = true,
+  showToolResults = true,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -70,8 +116,15 @@ export const Chat: FC<ChatProps> = ({
             </div>
           )}
 
-          {session.messages.map((message) => (
-            <ChatMessage key={message.id} message={message} fontSize={fontSize} />
+          {groupMessages(session.messages).map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              fontSize={fontSize}
+              showThinking={showThinking}
+              showTools={showTools}
+              showToolResults={showToolResults}
+            />
           ))}
 
           {streamingMessage && (
@@ -79,6 +132,9 @@ export const Chat: FC<ChatProps> = ({
               message={streamingMessage}
               isStreaming={true}
               fontSize={fontSize}
+              showThinking={showThinking}
+              showTools={showTools}
+              showToolResults={showToolResults}
             />
           )}
 

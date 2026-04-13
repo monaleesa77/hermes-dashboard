@@ -1,32 +1,65 @@
-import { FC, useState } from 'react';
-import { User, Bot, Wrench, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { FC } from 'react';
+import { User, Bot, Wrench, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import type { ChatMessage as ChatMessageType, ToolCall } from '../../types';
+import type { ChatMessage as ChatMessageType, ToolCall, ToolResult } from '../../types';
+
+/** Format tool result content for display */
+function formatResult(content: unknown): string {
+  if (!content) return '';
+  const str = String(content);
+  try {
+    const parsed = JSON.parse(str);
+    // If it's a simple object with total_count or similar, show as-is
+    if (typeof parsed === 'object' && parsed !== null && 'total_count' in parsed) {
+      return str;
+    }
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return str;
+  }
+}
+
+/** Clean thinking content by removing XML/HTML tags */
+function cleanThinkingContent(content: string | undefined): string {
+  if (!content) return '';
+
+  // 方案A：仅移除<think>标签（推荐）
+  // 针对已知问题，风险最低
+  let cleaned = content
+    .replace(/<think>/gi, '')
+    .replace(/<\/think>/gi, '')
+    .replace(/<\/thinking>/gi, '')
+    .trim();
+
+  // 如果仍有明显的XML标签，进行通用清理
+  if (/<[^>]+>/.test(cleaned)) {
+    cleaned = cleaned.replace(/<[^>]*>/g, '');
+  }
+
+  return cleaned.trim();
+}
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isStreaming?: boolean;
   fontSize?: number;
+  showThinking?: boolean;
+  showTools?: boolean;
+  showToolResults?: boolean;
 }
 
 export const ChatMessage: FC<ChatMessageProps> = ({
   message,
   isStreaming = false,
   fontSize = 14,
+  showThinking = true,
+  showTools = true,
+  showToolResults = true,
 }) => {
   const isUser = message.role === 'user';
-  const [expandedThinking, setExpandedThinking] = useState(true);
-  const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
-
-  const toggleTool = (toolId: string) => {
-    setExpandedTools(prev => ({
-      ...prev,
-      [toolId]: !prev[toolId],
-    }));
-  };
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { bg: string; color: string }> = {
@@ -90,8 +123,8 @@ export const ChatMessage: FC<ChatMessageProps> = ({
             overflowWrap: 'break-word',
           }}
         >
-          {/* Thinking Block - Collapsible */}
-          {message.thinking && (
+          {/* Thinking Block - Controlled by showThinking prop */}
+          {showThinking && message.thinking && (
             <div
               className="mb-2 rounded-lg overflow-hidden"
               style={{
@@ -99,51 +132,45 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 border: '1px solid var(--border-color)',
               }}
             >
-              <button
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors"
+              <div
+                className="flex items-center justify-between px-3 py-2 text-xs font-medium"
                 style={{ color: 'var(--text-secondary)' }}
-                onClick={() => setExpandedThinking(!expandedThinking)}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--bg-tertiary)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                }}
               >
                 <div className="flex items-center gap-1.5">
-                  {expandedThinking ? (
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  ) : (
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  )}
                   <span>Thinking</span>
                 </div>
                 <div className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                   <Clock className="w-3 h-3" />
                   <span>~2s</span>
                 </div>
-              </button>
-              {expandedThinking && (
-                <div
-                  className="px-3 py-2 text-sm italic border-t"
-                  style={{
-                    color: 'var(--text-muted)',
-                    borderColor: 'var(--border-color)',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {message.thinking as string}
-                </div>
-              )}
+              </div>
+              <div
+                className="px-3 py-2 text-sm italic border-t"
+                style={{
+                  color: 'var(--text-muted)',
+                  borderColor: 'var(--border-color)',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {cleanThinkingContent(message.thinking)}
+              </div>
             </div>
           )}
 
-          {/* Tool Calls - PinchChat Style */}
-          {message.tool_calls && message.tool_calls.length > 0 && (
+          {/* Tool Calls - Controlled by showTools prop */}
+          {showTools && message.tool_calls && message.tool_calls.length > 0 && (
             <div className="space-y-2 mb-3">
               {message.tool_calls.map((tool: ToolCall) => {
-                const isExpanded = expandedTools[tool.id] ?? true;
+                // Look up actual result from message.tool_results (set by backend's _attach_tool_results)
+                const toolResult: ToolResult | undefined = message.tool_results?.find(
+                  (tr: ToolResult) => tr.tool_call_id === tool.id
+                );
+                const hasResult = !!(tool.result || toolResult);
+                const resultContent = tool.result ?? (toolResult?.content ?? '');
+                // Show completed if we have a result, otherwise use stored status
+                const displayStatus = hasResult ? 'completed' : tool.status;
+
                 return (
                   <div
                     key={tool.id}
@@ -153,33 +180,22 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                       border: '1px solid var(--border-color)',
                     }}
                   >
-                    {/* Tool Header */}
-                    <button
-                      className="w-full flex items-center justify-between px-3 py-2 transition-colors"
-                      onClick={() => toggleTool(tool.id)}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--bg-secondary)';
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                      }}
+                    {/* Tool Header - Always visible */}
+                    <div
+                      className="flex items-center justify-between px-3 py-2"
+                      style={{ color: 'var(--text-primary)' }}
                     >
                       <div className="flex items-center gap-2">
-                        {isExpanded ? (
-                          <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                        ) : (
-                          <ChevronRight className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                        )}
                         <Wrench className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        <span className="text-sm font-medium">
                           {tool.name}
                         </span>
                       </div>
-                      {getStatusBadge(tool.status)}
-                    </button>
+                      {getStatusBadge(displayStatus)}
+                    </div>
 
-                    {/* Tool Content */}
-                    {isExpanded && (
+                    {/* Tool Content - Controlled by showToolResults prop */}
+                    {showToolResults && (
                       <div className="px-3 pb-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
                         {/* Arguments */}
                         <div className="mt-2">
@@ -198,7 +214,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                         </div>
 
                         {/* Result */}
-                        {!!tool.result && (
+                        {hasResult && (
                           <div className="mt-2">
                             <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
                               Result
@@ -207,12 +223,10 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                               className="p-2 rounded text-xs overflow-x-auto"
                               style={{
                                 backgroundColor: 'var(--bg-secondary)',
-                                color: tool.status === 'error' ? 'var(--error)' : 'var(--success)',
+                                color: displayStatus === 'error' ? 'var(--error)' : 'var(--success)',
                               }}
                             >
-                              {typeof tool.result === 'string'
-                                ? tool.result
-                                : JSON.stringify(tool.result as Record<string, unknown>, null, 2)}
+                              {formatResult(resultContent)}
                             </pre>
                           </div>
                         )}
