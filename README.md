@@ -19,6 +19,7 @@ A sleek, modern web dashboard for [Hermes AI Agent](https://github.com/hermes-ai
 - 💬 **Real-time Chat** — WebSocket-based streaming responses
 - 🔧 **Tool Visualization** — Collapsible tool calls with status badges
 - 🤔 **Thinking Blocks** — Collapsible reasoning display with elapsed time
+- 👁️ **Global Visibility Toggles** — One-click hide/show Thinking, Tools, and Results
 - 📜 **Session Management** — Drag & drop reorder, token usage bars
 - 🎯 **Platform Icons** — Discord, Telegram, QQ, WeChat, API, Cron
 - 📊 **Token Usage** — Visual progress bars per session
@@ -108,8 +109,8 @@ HERMES_API_KEY=any
 # Session files location
 HERMES_HOME=/Users/mona/.hermes
 
-# CORS Origins
-CORS_ORIGINS=http://localhost:10007
+# CORS Origins (supports entire LAN segments)
+CORS_ORIGINS=http://localhost:10007,https://localhost:10007,http://127.0.0.1:10007,https://127.0.0.1:10007,http://192.168.*:10007,http://10.*.*.*:10007
 ```
 
 ## 🎨 Customization
@@ -139,7 +140,8 @@ hermes-dashboard/
 │   ├── main.py              # FastAPI application
 │   ├── models.py            # Pydantic models
 │   ├── session_store.py     # Session file parser
-│   ├── hermes_client.py     # Hermes API client
+│   ├── hermes_client.py    # Hermes API client
+│   ├── config_loader.py     # Config loader for ~/.hermes/config.yaml
 │   └── requirements.txt     # Python dependencies
 ├── frontend/                 # React + TypeScript + Vite
 │   ├── src/
