@@ -214,8 +214,18 @@ async def websocket_chat(websocket: WebSocket):
                 "timestamp": datetime.now().isoformat(),
             })
 
-            # Build message for Hermes
-            messages = [{"role": "user", "content": request.message}]
+            # Build message for Hermes (multimodal support)
+            if request.images:
+                message_content = [
+                    {"type": "text", "text": request.message},
+                    *[
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img}"}}
+                        for img in request.images
+                    ]
+                ]
+            else:
+                message_content = request.message
+            messages = [{"role": "user", "content": message_content}]
 
             async for event in hermes_client.chat_completion(
                 messages=messages,

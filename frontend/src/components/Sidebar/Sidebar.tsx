@@ -247,7 +247,7 @@ export const Sidebar: FC<SidebarProps> = ({
       <div className="p-3 border-t flex-shrink-0" style={{ borderColor: 'var(--border-color)' }}>
         <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
           <span>Hermes Dashboard</span>
-          <span>v1.0</span>
+          <span>v1.1.0</span>
         </div>
       </div>
     </aside>

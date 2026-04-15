@@ -22,12 +22,20 @@ class ToolCall(BaseModel):
     completed_at: Optional[datetime] = None
 
 
+class ToolResult(BaseModel):
+    id: str
+    tool_call_id: str
+    content: str
+    timestamp: Optional[str] = None
+
+
 class ChatMessage(BaseModel):
     id: str
     role: MessageRole
     content: str
     timestamp: datetime
     tool_calls: List[ToolCall] = []
+    tool_results: List[ToolResult] = []
     thinking: Optional[str] = None
     model: Optional[str] = None
 

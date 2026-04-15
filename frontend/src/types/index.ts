@@ -10,12 +10,20 @@ export interface ToolCall {
   completed_at?: string;
 }
 
+export interface ToolResult {
+  id: string;
+  tool_call_id: string;
+  content: string;
+  timestamp?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
   timestamp: string;
   tool_calls?: ToolCall[];
+  tool_results?: ToolResult[];
   thinking?: string;
   image_urls?: string[];
   model?: string;

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, FC } from 'react';
 import {
   Bot, Settings, Type, Sun, Moon, Download, ZoomIn,
-  Monitor, Palette
+  Monitor, Palette, Brain, Wrench, FileText
 } from 'lucide-react';
 import type { SessionInfo } from '../../types';
 import type { Theme, AccentColor } from '../../App';
@@ -19,6 +19,13 @@ interface HeaderProps {
   zoom: number;
   onZoomChange: (zoom: number) => void;
   onExport?: () => void;
+  // Visibility toggles
+  showThinking: boolean;
+  onShowThinkingChange: (show: boolean) => void;
+  showTools: boolean;
+  onShowToolsChange: (show: boolean) => void;
+  showToolResults: boolean;
+  onShowToolResultsChange: (show: boolean) => void;
 }
 
 const ACCENT_COLORS: { value: AccentColor; label: string; hue: number }[] = [
@@ -43,6 +50,12 @@ export const Header: FC<HeaderProps> = ({
   zoom,
   onZoomChange,
   onExport,
+  showThinking,
+  onShowThinkingChange,
+  showTools,
+  onShowToolsChange,
+  showToolResults,
+  onShowToolResultsChange,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -157,6 +170,64 @@ export const Header: FC<HeaderProps> = ({
             <Download className="w-5 h-5" />
           </button>
         )}
+
+        {/* Visibility Toggles */}
+        <div className="flex items-center gap-0.5">
+          {/* Thinking Toggle */}
+          <button
+            className="p-2 rounded-lg transition-all duration-150"
+            style={{
+              color: showThinking ? 'var(--accent)' : 'var(--text-muted)',
+              textDecoration: showThinking ? 'none' : 'line-through',
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = 'transparent')
+            }
+            onClick={() => onShowThinkingChange(!showThinking)}
+            title={showThinking ? 'Hide Thinking' : 'Show Thinking'}
+          >
+            <Brain className="w-5 h-5" />
+          </button>
+
+          {/* Tools Toggle */}
+          <button
+            className="p-2 rounded-lg transition-all duration-150"
+            style={{
+              color: showTools ? 'var(--accent)' : 'var(--text-muted)',
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = 'transparent')
+            }
+            onClick={() => onShowToolsChange(!showTools)}
+            title={showTools ? 'Hide Tools' : 'Show Tools'}
+          >
+            <Wrench className="w-5 h-5" />
+          </button>
+
+          {/* Tool Results Toggle */}
+          <button
+            className="p-2 rounded-lg transition-all duration-150"
+            style={{
+              color: showToolResults ? 'var(--accent)' : 'var(--text-muted)',
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)')
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = 'transparent')
+            }
+            onClick={() => onShowToolResultsChange(!showToolResults)}
+            title={showToolResults ? 'Hide Results' : 'Show Results'}
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+        </div>
 
         {/* Theme Toggle */}
         <button
